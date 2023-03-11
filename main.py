@@ -1,9 +1,16 @@
 import csv
+import math
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
 class Diagram:
+    # simulation params
+    money = 1000
+    factor = 2
+    amount_of_shares = 0
+
     x = []
     y = []
     MACD = []
@@ -28,6 +35,7 @@ class Diagram:
 
                 self.MACD.append(self.calculate_MACD(counter))
                 self.SIGNAL.append(self.calculate_SIGNAL(counter))
+                self.simulation_step(counter)
                 counter += 1
 
     def show_dialogs(self):
@@ -87,9 +95,40 @@ class Diagram:
     def calculate_SIGNAL(self, counter):
         return self.calculate_EMA(9, counter, self.MACD)
 
+    def simulation_step(self, counter):
+        if counter == 1:
+            return
+
+        counter -= 1
+        if self.MACD[counter] > self.SIGNAL[counter] and self.MACD[counter - 1] < self.SIGNAL[counter - 1]:
+            # sell some shares
+            drop_factor = abs(self.MACD[counter] - self.SIGNAL[counter])
+            shares_to_sell = math.ceil(drop_factor * self.factor)
+
+            if shares_to_sell > self.amount_of_shares:
+                shares_to_sell = self.amount_of_shares
+
+            # sell
+            self.money += shares_to_sell * self.y[counter]
+            self.amount_of_shares -= shares_to_sell
+
+        elif self.MACD[counter] < self.SIGNAL[counter] and self.MACD[counter - 1] > self.SIGNAL[counter - 1]:
+            # buy some shares
+            growth_factor = abs(self.MACD[counter] - self.SIGNAL[counter])
+            shares_to_buy = math.ceil(growth_factor * self.factor)
+            price = shares_to_buy * self.y[counter]
+
+            if price > self.money:
+                shares_to_buy = math.floor(self.money / price)
+
+            # sell
+            self.money -= shares_to_buy * self.y[counter]
+            self.amount_of_shares += shares_to_buy
+
 
 if __name__ == '__main__':
     diagram = Diagram()
     diagram.create_orlen_diagram()
     diagram.create_MACD_diagram()
-    diagram.show_dialogs()
+    # diagram.show_dialogs()
+    print(diagram.money)
