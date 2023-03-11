@@ -4,8 +4,6 @@ import pandas as pd
 
 
 class Diagram:
-    N = 1000
-    ALFA = 0
     x = []
     y = []
     MACD = []
@@ -13,7 +11,6 @@ class Diagram:
 
     def __init__(self):
         self.load_data()
-        self.ALFA = 2 / (self.N + 1)
 
     def load_data(self):
         counter = 0
@@ -24,52 +21,75 @@ class Diagram:
                 if counter == 0:
                     counter += 1
                     continue
+
                 print(row[0] + " " + row[3])
                 self.x.append(row[0])
                 self.y.append(float(row[3]))
 
                 self.MACD.append(self.calculate_MACD(counter))
+                self.SIGNAL.append(self.calculate_SIGNAL(counter))
                 counter += 1
 
+    def show_dialogs(self):
+        plt.show()
+
     def create_orlen_diagram(self):
+        plt.figure(1)
         # plot with the exchange rate of the Orlen company
-        x = pd.to_datetime(self.x)
+        self.x = pd.to_datetime(self.x)
         DF = pd.DataFrame()
         DF['value'] = self.y
-        DF = DF.set_index(x)
-        plt.plot(DF)
-
-        DF = pd.DataFrame()
-        DF['value'] = self.MACD
-        DF = DF.set_index(x)
+        DF = DF.set_index(self.x)
         plt.plot(DF)
 
         plt.gcf().autofmt_xdate()
         plt.title('Exchange rate of the Orlen company 2019-2023', fontsize=15)
         plt.xlabel('Date')
         plt.ylabel('Share price')
-        plt.show()
+
+    def create_MACD_diagram(self):
+        plt.show(block=False)
+        plt.figure(2)
+        DF1 = pd.DataFrame()
+        DF1['value'] = self.MACD
+        DF1 = DF1.set_index(self.x)
+        plt.plot(DF1)
+
+        DF1 = pd.DataFrame()
+        DF1['value'] = self.SIGNAL
+        DF1 = DF1.set_index(self.x)
+        plt.plot(DF1)
+
+        plt.gcf().autofmt_xdate()
 
     def calculate_MACD(self, counter):
-        EMA26 = self.calculate_EMA(26, counter)
-        EMA12 = self.calculate_EMA(12, counter)
+        EMA26 = self.calculate_EMA(26, counter, self.y)
+        EMA12 = self.calculate_EMA(12, counter, self.y)
 
         return EMA12 - EMA26
 
-    def calculate_EMA(self, amount, counter):
+    def calculate_EMA(self, amount, counter, array):
+
         nominator = 0
         denominator = 0
 
         if amount > counter:
             amount = counter
 
-        for i in range(amount):
-            denominator += pow((1 - self.ALFA), i)
-            nominator += denominator * self.y[counter-(i+1)]
+        alfa = 2 / (amount + 1)
 
-        return nominator/denominator
+        for i in range(amount):
+            denominator += pow((1 - alfa), i)
+            nominator += pow((1 - alfa), i) * array[counter - 2 - i]
+
+        return nominator / denominator
+
+    def calculate_SIGNAL(self, counter):
+        return self.calculate_EMA(9, counter, self.MACD)
 
 
 if __name__ == '__main__':
     diagram = Diagram()
     diagram.create_orlen_diagram()
+    diagram.create_MACD_diagram()
+    diagram.show_dialogs()
