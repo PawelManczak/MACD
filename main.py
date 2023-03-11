@@ -8,9 +8,9 @@ import pandas as pd
 class Diagram:
     # simulation params
     money = 1000
-    factor = 2
+    factor = 23
     amount_of_shares = 0
-
+    transactions = 0
     x = []
     y = []
     MACD = []
@@ -98,6 +98,10 @@ class Diagram:
     def simulation_step(self, counter):
         if counter == 1:
             return
+        elif counter == 999:
+            # last day
+            self.money += self.amount_of_shares * self.y[counter-1]
+            return
 
         counter -= 1
         if self.MACD[counter] > self.SIGNAL[counter] and self.MACD[counter - 1] < self.SIGNAL[counter - 1]:
@@ -107,10 +111,11 @@ class Diagram:
 
             if shares_to_sell > self.amount_of_shares:
                 shares_to_sell = self.amount_of_shares
-
+            print(shares_to_sell)
             # sell
             self.money += shares_to_sell * self.y[counter]
             self.amount_of_shares -= shares_to_sell
+            self.transactions += 1
 
         elif self.MACD[counter] < self.SIGNAL[counter] and self.MACD[counter - 1] > self.SIGNAL[counter - 1]:
             # buy some shares
@@ -124,6 +129,7 @@ class Diagram:
             # sell
             self.money -= shares_to_buy * self.y[counter]
             self.amount_of_shares += shares_to_buy
+            self.transactions += 1
 
 
 if __name__ == '__main__':
@@ -131,4 +137,4 @@ if __name__ == '__main__':
     diagram.create_orlen_diagram()
     diagram.create_MACD_diagram()
     # diagram.show_dialogs()
-    print(diagram.money)
+    print(diagram.money, " ", diagram.transactions)
